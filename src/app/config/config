@@ -1,0 +1,10 @@
+#session control
+session.name                = SESSIONID
+session.maxlifetime         = 1440
+
+#session in database
+databaseSession.enable      = true
+databaseSession.type        = mongo
+databaseSession.host        = localhost
+databaseSession.port        = 27017
+databaseSession.db          = paladinu_server
