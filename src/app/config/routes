@@ -1,6 +1,5 @@
 /client/:name/:idade                MainController.client(name = "Sem nome", idade = 18)
 /                                   MainController.index()
 /login                              MainController.login()
-
 /json                               MainController.json()
 /xml                                MainController.xml()
