@@ -11,12 +11,21 @@ import com.thoughtworks.xstream.converters.UnmarshallingContext;
 import com.thoughtworks.xstream.io.HierarchicalStreamReader;
 import com.thoughtworks.xstream.io.HierarchicalStreamWriter;
 import com.thoughtworks.xstream.io.xml.StaxDriver;
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URLConnection;
 import java.util.AbstractMap;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import system.controller.helpers.ViewData;
 import system.controller.scope.Request;
 import system.controller.scope.Session;
@@ -85,6 +94,30 @@ public abstract class Controller {
         return Rythm.render(view);
     }
 
+    protected Result renderFile(File file) {
+        try {
+            return renderFile(new BufferedInputStream(new FileInputStream(file)));
+        } catch (FileNotFoundException ex) {
+            //TODO:
+            return null;
+        }
+    }
+
+    protected Result renderFile(InputStream is) {
+        Result response = new Result();
+        response.setContent(is);
+        try {
+            request.addHeader("Content-Type", URLConnection.guessContentTypeFromStream(is));
+        } catch (IOException ex) {
+        }
+        response.setHeaders(request.getNewHeaders());
+        return response;
+    }
+
+    protected Result renderResFile(String res) {
+        return renderFile(new File(getPathRes(), res));
+    }
+
     protected Result renderHtml(String content) {
         Result response = new Result();
         response.setContent(content);
@@ -119,7 +152,7 @@ public abstract class Controller {
     }
 
     protected Result renderXML(String root) {
-        if (root == null){
+        if (root == null) {
             root = "root";
         }
         XStream magicApi = new XStream(new StaxDriver());
@@ -156,5 +189,14 @@ public abstract class Controller {
         response.setHeaders(request.getNewHeaders());
 
         return response;
+    }
+
+    private File getPathRes() {
+        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
+        return new File(classLoader.getResource("app/resources").getPath());
+    }
+    
+    protected File getResource(String res){
+        return new File(getPathRes(), res);
     }
 }

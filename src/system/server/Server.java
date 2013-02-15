@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Properties;
+import org.apache.commons.io.IOUtils;
 import org.vertx.java.core.Handler;
 import org.vertx.java.core.Vertx;
 import org.vertx.java.core.buffer.Buffer;
@@ -80,7 +81,11 @@ public class Server {
                                 for (Entry<String, String> header : response.getHeaders().entrySet()) {
                                     req.response.headers().put(header.getKey(), header.getValue());
                                 }
-                                req.response.end(response.getContent());
+                                if (response.getInputStream() != null) {
+                                    req.response.end(new Buffer(IOUtils.toByteArray(response.getInputStream())));
+                                }else{
+                                    req.response.end(response.getContent());
+                                }
                             }
 
 

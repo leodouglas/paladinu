@@ -8,7 +8,7 @@ import system.controller.Result;
  *
  * @author leodouglas
  */
-public class MainController extends Controller {
+public class SampleController extends Controller {
 
     public Result index() {
         session.add("pessoa", new Pessoa("Léo Padilha", 25));
@@ -36,5 +36,9 @@ public class MainController extends Controller {
     
     public Result client(String name, String idade) {
         return renderHtml("<html><body><h1>" + name + ", " + idade +  "</h1></body></html>");
+    }
+    
+    public Result download() {
+        return renderResFile("img/paladinu.jpg");
     }    
 }
