@@ -11,10 +11,7 @@ import com.thoughtworks.xstream.converters.UnmarshallingContext;
 import com.thoughtworks.xstream.io.HierarchicalStreamReader;
 import com.thoughtworks.xstream.io.HierarchicalStreamWriter;
 import com.thoughtworks.xstream.io.xml.StaxDriver;
-import java.io.BufferedInputStream;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URLConnection;
@@ -24,8 +21,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import system.controller.helpers.ViewData;
 import system.controller.scope.Request;
 import system.controller.scope.Session;
@@ -95,15 +90,14 @@ public abstract class Controller {
     }
 
     protected Result renderFile(File file) {
-        try {
-            return renderFile(new BufferedInputStream(new FileInputStream(file)));
-        } catch (FileNotFoundException ex) {
-            //TODO:
-            return null;
-        }
+        Result response = new Result();
+        request.addHeader("Content-Type", URLConnection.guessContentTypeFromName(file.getAbsolutePath()));
+        response.setContent(file);
+        response.setHeaders(request.getNewHeaders());
+        return response;
     }
 
-    protected Result renderFile(InputStream is) {
+    protected Result renderFileStream(InputStream is) {
         Result response = new Result();
         response.setContent(is);
         try {
@@ -195,8 +189,8 @@ public abstract class Controller {
         ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
         return new File(classLoader.getResource("app/resources").getPath());
     }
-    
-    protected File getResource(String res){
+
+    protected File getResource(String res) {
         return new File(getPathRes(), res);
     }
 }

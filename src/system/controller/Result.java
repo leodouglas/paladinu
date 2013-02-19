@@ -1,5 +1,6 @@
 package system.controller;
 
+import java.io.File;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
@@ -10,8 +11,9 @@ import java.util.Map;
  */
 public class Result {
 
-    private String content;
+    private String content = null;
     private InputStream inputStream = null;
+    private File file = null;
     private Map<String, String> headers = new HashMap<>();
 
     public void setContent(String content) {
@@ -22,6 +24,10 @@ public class Result {
         this.inputStream = inputStream;
     }
 
+    public void setContent(File file) {
+        this.file = file;
+    }
+    
     public String getContent() {
         return content;
     }
@@ -37,5 +43,10 @@ public class Result {
     public InputStream getInputStream() {
         return inputStream;
     }
-    
+
+    public File getFile() {
+        return file;
+    }
+
+
 }

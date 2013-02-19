@@ -1,15 +1,14 @@
 package system.controller.scope;
 
 import com.mongodb.BasicDBObject;
-import com.mongodb.DB;
 import com.mongodb.DBCollection;
 import com.mongodb.DBObject;
-import com.mongodb.MongoClient;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.net.UnknownHostException;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.HashMap;
@@ -17,6 +16,7 @@ import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 import java.util.UUID;
+import system.controller.scope.utils.MongoSession;
 import system.server.Config;
 
 /**
@@ -28,12 +28,27 @@ public class Session {
     private HashMap<String, Object> values;
     private final String sessionId;
     private static String cookieSessionName;
+    private MongoSession mongoSession;
 
     public Session(Request request) {
         if (request.cookies.get(cookieSessionName) == null) {
             request.cookies.add(cookieSessionName, UUID.randomUUID().toString().replaceAll("-", "").toUpperCase());
         }
         this.sessionId = request.cookies.get("SESSIONID").getValue();
+
+
+        if (Config.getBoolProperty("databaseSession.enable")) {
+            switch (Config.getStrProperty("databaseSession.type")) {
+                case "mongo": {
+                    try {
+                        mongoSession = MongoSession.getIntance();
+                    } catch (UnknownHostException ex) {
+                    }
+                }
+            }
+        }
+
+
         loadSessionValues();
     }
 
@@ -67,10 +82,7 @@ public class Session {
             switch (Config.getStrProperty("databaseSession.type")) {
                 case "mongo": {
                     try {
-                        MongoClient mdb = new MongoClient(Config.getStrProperty("databaseSession.host"), Config.getIntProperty("databaseSession.port"));
-                        DB db = mdb.getDB(Config.getStrProperty("databaseSession.db"));
-                        DBCollection collection = db.getCollection("sessions");
-                        DBObject findOne = collection.findOne(new BasicDBObject("sessionid", this.sessionId));
+                        DBObject findOne = mongoSession.getSession().findOne(new BasicDBObject("sessionid", this.sessionId));
                         if (findOne != null) {
 
                             ByteArrayInputStream bis = new ByteArrayInputStream((byte[]) findOne.get("values"));
@@ -80,12 +92,13 @@ public class Session {
                         } else {
                             values = new HashMap<>();
                         }
-                        mdb.close();
                     } catch (IOException | ClassNotFoundException ex) {
                     }
                     break;
                 }
             }
+        }else{
+            values = new HashMap<>();
         }
     }
 
@@ -101,23 +114,20 @@ public class Session {
                             serSession = bos.toByteArray();
                         }
 
-                        MongoClient mdb = new MongoClient(Config.getStrProperty("databaseSession.host"), Config.getIntProperty("databaseSession.port"));
-                        DB db = mdb.getDB(Config.getStrProperty("databaseSession.db"));
-                        DBCollection collection = db.getCollection("sessions");
-                        DBObject findReg = collection.findOne(new BasicDBObject("sessionid", this.sessionId));
+                        DBCollection session = mongoSession.getSession();
+                        DBObject findReg = session.findOne(new BasicDBObject("sessionid", this.sessionId));
 
                         if (findReg != null) {
                             findReg.put("values", serSession);
                             findReg.put("timestamp", new Date());
-                            collection.save(findReg);
+                            session.save(findReg);
                         } else {
                             Map<String, Object> reg = new HashMap<>();
                             reg.put("sessionid", this.sessionId);
                             reg.put("values", serSession);
                             reg.put("timestamp", new Date());
-                            collection.save(new BasicDBObject(reg));
+                            session.save(new BasicDBObject(reg));
                         }
-                        mdb.close();
                     } catch (Exception ex) {
                     }
                 }
@@ -131,22 +141,19 @@ public class Session {
             switch (Config.getStrProperty("databaseSession.type")) {
                 case "mongo": {
                     try {
-                        MongoClient mdb = new MongoClient(Config.getStrProperty("databaseSession.host"), Config.getIntProperty("databaseSession.port"));
-                        DB db = mdb.getDB(Config.getStrProperty("databaseSession.db"));
-                        DBCollection collection = db.getCollection("sessions");
+                        DBCollection session = MongoSession.getIntance().getSession();
 
                         if (force) {
-                            collection.drop();
+                            session.drop();
                         } else {
                             int maxlifetime = Config.getIntProperty("session.maxlifetime") > 0 ? Config.getIntProperty("session.maxlifetime") : 1440;
                             BasicDBObject query = new BasicDBObject();
                             Calendar calendar = Calendar.getInstance();
-                            calendar.add(Calendar.SECOND, -(maxlifetime)); 
+                            calendar.add(Calendar.SECOND, -(maxlifetime));
                             query.put("timestamp", new BasicDBObject("$lte", calendar.getTime()));
-                            collection.remove(query);
+                            session.remove(query);
                         }
 
-                        mdb.close();
                     } catch (Exception ex) {
                     }
                 }
@@ -167,4 +174,7 @@ public class Session {
             }
         }, 60000, 60000);
     }
+
+  
+
 }

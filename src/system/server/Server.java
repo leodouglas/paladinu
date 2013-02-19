@@ -81,7 +81,9 @@ public class Server {
                                 for (Entry<String, String> header : response.getHeaders().entrySet()) {
                                     req.response.headers().put(header.getKey(), header.getValue());
                                 }
-                                if (response.getInputStream() != null) {
+                                if (response.getFile() != null) {
+                                    req.response.sendFile(response.getFile().getAbsolutePath());
+                                }else if (response.getInputStream() != null) {
                                     req.response.end(new Buffer(IOUtils.toByteArray(response.getInputStream())));
                                 }else{
                                     req.response.end(response.getContent());
