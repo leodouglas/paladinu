@@ -12,3 +12,7 @@ Using rythmengine (http://www.rythmengine.com)
 
 like structure codeigniter,
 like Razor engine View 
+
+
+[![Bitdeli Badge](https://d2weczhvl823v0.cloudfront.net/leodouglas/paladinu/trend.png)](https://bitdeli.com/free "Bitdeli Badge")
+
